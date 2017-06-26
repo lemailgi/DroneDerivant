@@ -612,6 +612,12 @@ switch (state){
              LED1 = 0;
              Commande_motor(255-Consigne_vitesse);
            }
+           
+           if (compteur_etat3 == 0){
+              delay_us(200);
+              oldstate = SB<<1 | SA;  //  ou logique de RA3 et RA2, lecture du capteur pour initialiser la machine d'état
+              compteur_etat3 = 1;
+           }
            break;
 
          case STATE1:
@@ -681,57 +687,63 @@ switch (state){
 
          case STATE3:
            //UART1_Write(3);
-           
-           if (compteur_etat3 == 0){
-           delay_us(200);
-           oldstate = SB<<1 | SA;  //  ou logique de RA3 et RA2, lecture du capteur pour initialiser la machine d'état
-           compteur_etat3 = 1;
-           }
 
-           if (Toogle <= 0){
+           if (Toogle == 0){
              Consigne_position = Consigne_position + rxbuffer_I2C_Octet2;
              Consigne_position = Consigne_position << 8;
              Consigne_position = Consigne_position + rxbuffer_I2C_Octet3;
              Consigne_position = Consigne_position*4;
-
              Consigne = 0;
 
-             Valeur = NB_Impulsion - Consigne_position;
-
-             if (butee_rentree != 1){
-               if (Valeur < 0) Commande_motor(255-Consigne_vitesse);  // 0 --> 127 sens sortie
-               else if (Valeur > 0) Commande_motor(Consigne_vitesse); // 128 --> 255 sens rentree
-             }
-             else if (butee_rentree == 1){
-               if (Valeur > 0) Commande_motor(Consigne_vitesse);
-             }
-
+//             if (butee_rentree != 1){
+//               if (Valeur < 0) Commande_motor(255-Consigne_vitesse);  // 0 --> 127 sens sortie
+//               else if (Valeur > 0) Commande_motor(Consigne_vitesse); // 128 --> 255 sens rentree
+//             }
+//             else if (butee_rentree == 1){
+//               if (Valeur > 0) Commande_motor(Consigne_vitesse);
+//             }
              Toogle++;
-
            }
+           Valeur = NB_Impulsion - Consigne_position;
 
-
-           if (Vitesse == 1){
-           
-             if (butee_rentree != 1){
-                 if (Valeur < 0) Commande_motor(Consigne_vitesse);
-                 else Commande_motor(255 - Consigne_vitesse);
-                 Vitesse = 0;
-             }
-           
+           if(Valeur > 0 && butee_sortie != 0){   // Valeur > 0  ==> 0-127
+                Commande_motor(Consigne_vitesse);
            }
-
-           if (Moteur_OFF == 1){
+           else if(Valeur < 0 && butee_rentree != 0){   // Valeur < 0 ==> 0-127
+                Commande_motor(255-Consigne_vitesse);
+           }
+           else if (Valeur == 0){   // Valeur == 0 ==> Etat 2
+             state = STATE2;
              Off_motor();
-             Moteur_OFF = 0;
+             Toogle = 0;
+           }
+           else{
+                state = STATE2;
+                Off_motor();
            }
 
-           if (Moteur_ON == 1){
-             On_motor();
-             Moteur_OFF = 0;
-             Moteur_ON = 0;
-           }
 
+           // Changement de la vitesse
+//           if (Vitesse == 1){
+//             if (butee_rentree != 1){
+//                 if (Valeur < 0) Commande_motor(Consigne_vitesse);
+//                 else Commande_motor(255 - Consigne_vitesse);
+//                 Vitesse = 0;
+//             }
+//           }
+
+//           if (Moteur_OFF == 1){
+//             Off_motor();
+//             Moteur_OFF = 0;
+//           }
+//
+//           if (Moteur_ON == 1){
+//             On_motor();
+//             Moteur_OFF = 0;
+//             Moteur_ON = 0;
+//           }
+
+           // COMM - DEBUG
            if (Flag==1){   // pour test
            UART1_Write(0xFF);
           /*UART1_Write(Consigne_vitesse);
@@ -752,30 +764,30 @@ switch (state){
           /*delay_ms(3000);
            NB_Impulsion = Consigne_position;*/
 
-           if (NB_Impulsion >= Consigne_position){
-             state = STATE2;
-             Toogle = 0;
-             Consigne_position = 0;
-           }
-           else if ((Valeur < 0)&&(butee_rentree == 1)){
-             state = STATE2;
-             Toogle = 0;
-             Consigne_position = 0;
-           }
-           else if (On == 0){
-             state = STATE0;
-             Led(0);
-             Off_motor();
-             On_TIMER3();
-             Consigne_Sortie = 0;
-             Toogle = 0;
-             Consigne_position = 0;
-           }
-           else if (Flag_butee == 1){
-            state = STATE5;
-            Flag_butee = 0;
-            Off_motor();
-           }
+//           if (NB_Impulsion >= Consigne_position){
+//             state = STATE2;
+//             Toogle = 0;
+//             Consigne_position = 0;
+//           }
+//           else if ((Valeur < 0)&&(butee_rentree == 1)){
+//             state = STATE2;
+//             Toogle = 0;
+//             Consigne_position = 0;
+//           }
+//           else if (On == 0){
+//             state = STATE0;
+//             Led(0);
+//             Off_motor();
+//             On_TIMER3();
+//             Consigne_Sortie = 0;
+//             Toogle = 0;
+//             Consigne_position = 0;
+//           }
+//           else if (Flag_butee == 1){
+//            state = STATE5;
+//            Flag_butee = 0;
+//            Off_motor();
+//           }
 
          break;
 
