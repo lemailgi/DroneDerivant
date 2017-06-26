@@ -37,12 +37,17 @@ sbit LED1 at RA4_bit;
 //sbit LED1 at RB5_bit;
 sbit LED2 at RC7_bit;
 
-unsigned int NB_Impulsion = 0;  // Nombre d'impulsions de la sortie de l'opto OPB461T11
-unsigned int NB_Impulsion_old = 0;
+int NB_Impulsion = 0;  // Nombre d'impulsions de la sortie de l'opto OPB461T11
+int ab = 0;
+int val = 0;
+int Consigne_position = 0;
+int zero = 0;
+
+volatile signed int NB_Impulsion_old = 0;
 int Nb_Tour = 0;
 int Lecture_PORTA=0;
 int Sens = 0;
-int Consigne_position = 0;
+
 int Consigne_vitesse = 0;
 int Valeur_Consigne_vitesse = 0;
 int On = 0;
@@ -51,7 +56,7 @@ int Consigne_Rentre = 0;
 int Consigne = 0;
 int Vitesse = 0;
 int Position = 0;
-signed int Valeur = 0;
+
 
 int Egal=0;
 
@@ -96,6 +101,8 @@ unsigned compteur_etat3 = 0;
 char i = 0;
 
 char Tableau[30];
+
+int Flag_state3 = 0;
 
 
 /**************************************************************************************************
@@ -542,7 +549,7 @@ void Main(){
  TMR3IF_bit = 0;
  TMR3H = 0x3C;
  TMR3L = 0xB0;
- T3CON.TMR3ON = 0;
+ T3CON.TMR3ON = 1;
  TMR3IE_bit = 1;
 
 
@@ -652,7 +659,8 @@ switch (state){
            
          case STATE2:
 
-           //UART1_Write(2);
+//           UART1_Write(2);
+//           UART1_Write(NB_Impulsion);
 
            Moteur_OFF = 0;
            Led(2);
@@ -686,6 +694,7 @@ switch (state){
            break;
 
          case STATE3:
+         {
            //UART1_Write(3);
 
            if (Toogle == 0){
@@ -704,22 +713,32 @@ switch (state){
 //             }
              Toogle++;
            }
-           Valeur = NB_Impulsion - Consigne_position;
-
-           if(Valeur > 0 && butee_sortie != 0){   // Valeur > 0  ==> 0-127
-                Commande_motor(Consigne_vitesse);
-           }
-           else if(Valeur < 0 && butee_rentree != 0){   // Valeur < 0 ==> 0-127
-                Commande_motor(255-Consigne_vitesse);
-           }
-           else if (Valeur == 0){   // Valeur == 0 ==> Etat 2
+           
+           ab = Consigne_position - NB_Impulsion;
+           val = Consigne_position - NB_Impulsion;
+           UART1_Write(val);
+           UART1_Write(zero < val);
+           UART1_Write(zero > val);
+           UART1_Write(zero == val);
+           UART1_Write(zero <= val);
+           if(val == zero){   // Valeur == 0 ==> Etat 2
              state = STATE2;
              Off_motor();
              Toogle = 0;
+             Flag_state3 = 1;
+           }
+           else if(val < 0){// /*&& butee_sortie != 0*/){   // Valeur > 0  ==> 0-127
+                Commande_motor(Consigne_vitesse);
+                Flag_state3 = 2;
+           }
+           else if(val > 0){// /*&& butee_rentree != 0*/){   // Valeur < 0 ==> 0-127
+                Commande_motor(255-Consigne_vitesse);
+                Flag_state3 = 3;
            }
            else{
                 state = STATE2;
                 Off_motor();
+                Flag_state3 = 4;
            }
 
 
@@ -744,20 +763,22 @@ switch (state){
 //           }
 
            // COMM - DEBUG
-           if (Flag==1){   // pour test
+           if (0 && Flag==1){   // pour test
            UART1_Write(0xFF);
-          /*UART1_Write(Consigne_vitesse);
+          UART1_Write(Consigne_vitesse);
            UART1_Write(Valeur_Consigne_vitesse);
            UART1_Write(compteur);
            UART1_Write(rxbuffer_I2C_Octet2);
-           UART1_Write(rxbuffer_I2C_Octet3);*/
+           UART1_Write(rxbuffer_I2C_Octet3);
            UART1_Write(Consigne_position);
-           /*UART1_Write(ancien_etat);
+           UART1_Write(ancien_etat);
            UART1_Write(etat);
-           UART1_Write(NB_Impulsion_old);*/
+           UART1_Write(NB_Impulsion_old);
            UART1_Write(NB_Impulsion);
-           /*UART1_Write(NB_Impulsions_octet2);
-           UART1_Write(NB_Impulsions_octet1);*/
+           UART1_Write(ab);
+           UART1_Write(Flag_state3);
+           UART1_Write(NB_Impulsions_octet2);
+           UART1_Write(NB_Impulsions_octet1);
            Flag = 0;
            }
            
@@ -788,7 +809,7 @@ switch (state){
 //            Flag_butee = 0;
 //            Off_motor();
 //           }
-
+         }
          break;
 
          case STATE4:
