@@ -593,21 +593,18 @@ void Main(){
 //On = 1;   // pour test
 
 while(1){
-
-
+         delay_ms(1);
+         if(state <3 || state == 4)
+                  Read_Tension();
+         Read_butee();
 switch (state){
-          delay_ms(1);
          case STATE0:
-
            UART1_Write(0);
 
            if (compteur1 == 5){
              LED1 =~ LED1;
              compteur1 = 0;
            }
-
-           Read_Tension();
-           Read_butee();
 
            if (On == 1){
              state = STATE1;
@@ -618,11 +615,8 @@ switch (state){
            break;
 
          case STATE1:
-
            UART1_Write(1);
-
            Led(1);
-           Read_butee();
 
            if (Vitesse == 1){
             Vitesse = 0;
@@ -659,7 +653,6 @@ switch (state){
            Off_motor();
            //PWM1_Stop();
            //RC6_bit = 0;  //Disable L6203
-           Read_Tension();
 
            if (Vitesse == 1){
             Commande_motor(Consigne_vitesse);
@@ -669,7 +662,6 @@ switch (state){
            if (Consigne == 1){
              state = STATE3;
              //Led(3);
-             Read_butee();
              Egal=0;
              if (butee_sortie == 1) NB_Impulsion = 0;
            }
@@ -688,7 +680,6 @@ switch (state){
            break;
 
          case STATE3:
-
            //UART1_Write(3);
            
            if (compteur_etat3 == 0){
@@ -698,9 +689,6 @@ switch (state){
            }
 
            if (Toogle <= 0){
-
-             Read_butee();
-
              Consigne_position = Consigne_position + rxbuffer_I2C_Octet2;
              Consigne_position = Consigne_position << 8;
              Consigne_position = Consigne_position + rxbuffer_I2C_Octet3;
@@ -724,8 +712,6 @@ switch (state){
 
 
            if (Vitesse == 1){
-           
-             Read_butee();
            
              if (butee_rentree != 1){
                  if (Valeur < 0) Commande_motor(Consigne_vitesse);
@@ -796,9 +782,7 @@ switch (state){
          case STATE4:
 
            UART1_Write(4);
-
            Led(0);
-           Read_butee();
            Commande_motor(Consigne_vitesse);
 
            if (Vitesse == 1){
@@ -829,8 +813,6 @@ switch (state){
          case STATE5:
 
            UART1_Write(5);
-
-           Read_butee();
 
            if ((butee_rentree == 1)||(butee_sortie == 1)){
              state = STATE2;
